@@ -5,6 +5,7 @@
 const axios = require('../util/ajax.js');
 const config = require('../config/api.js');
 const insert = require('../util/insert.js');
+const insertSong = require('./insertSong.js');
 
 const insertMany = insert.insertMany;
 const insertUnique = insert.insertUnique;
@@ -36,14 +37,13 @@ function getBannerList(db) {
     });
     // 歌曲
     recommend.forEach((item, index) => {
-      insertUnique(db, 'songs', {
-        hash: item.hash
-      }, item).then(res => {
+      insertSong(db, item).then(res => {
         console.log('歌曲导入成功');
       }).catch(err => {
         console.log('歌曲导入失败');
       });
     });
+    insertSong(db, recommend[0]);
   }).catch(e => {
     console.log(e);
   });

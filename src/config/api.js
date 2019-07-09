@@ -42,7 +42,7 @@ const api = {
   },
   // 歌曲详情
   songInfo: {
-    url: 'http://m.kugou.com/app/i/getSongInfo.php',
+    url: 'http://m.kugou.com/api/v1/song/get_song_info',
     method: 'GET'
   },
   // 歌曲详情 - 带歌词
@@ -58,6 +58,11 @@ const api = {
   // 音乐搜索
   songSearch: {
     url: 'http://mobilecdn.kugou.com/api/v3/search/song',
+    method: 'GET'
+  },
+  // 单独获取歌词
+  songLyrics: {
+    url: 'http://m.kugou.com/app/i/krc.php',
     method: 'GET'
   }
 };

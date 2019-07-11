@@ -5,17 +5,17 @@
 const axios = require('../util/ajax.js');
 const config = require('../config/api.js');
 
-function insertSong(db, data) {
+function insertSong(db, song) {
   // 添加歌曲
   const colName = 'songs';
   const query = {
-    hash: data.hash
+    hash: song.hash
   };
   return new Promise((resolve, reject) => {
     db.collection(colName).find(query).toArray((err, result) => {
       if (err) reject(err);
-      if (result.length === 0) {
-        getSongInfo(data).then(obj => {
+      if (!result || result.length === 0) {
+        getSongInfo(song).then(obj => {
           db.collection(colName).insertOne(obj, (err, res) => {
             if (err) reject(err);
             resolve(res);
@@ -31,18 +31,19 @@ function insertSong(db, data) {
 }
 
 // 获取歌曲详情
-function getSongInfo(data) {
+function getSongInfo(song) {
   // 信息
   let getDetail = new Promise((resolve, reject) => {
     axios.get(config.songInfo.url, {
       params: {
         cmd: 'playInfo',
-        hash: data.hash
+        hash: song.hash
       }
     }).then(res => {
       const data = res.data || {};
       resolve(data);
     }).catch(err => {
+      console.log('信息失败');
       reject(err);
     });
   });
@@ -51,15 +52,16 @@ function getSongInfo(data) {
     axios.get(config.songLyrics.url, {
       params: {
         cmd: 100,
-        hash: data.hash,
-        keyword: data.filename,
-        timelength: data.duration * 1000,
+        hash: song.hash,
+        keyword: song.filename,
+        timelength: song.duration * 1000,
         d: 0.4672584729025302
       }
     }).then(res => {
       const data = res.data || '';
       resolve(data);
     }).catch(err => {
+      console.log('歌词失败');
       reject(err);
     });
   });

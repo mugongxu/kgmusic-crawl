@@ -8,7 +8,6 @@ const insert = require('../util/insert.js');
 const insertSong = require('./insertSong.js');
 
 const insertMany = insert.insertMany;
-const insertUnique = insert.insertUnique;
 
 function getBannerList(db) {
   axios.get(config.banner.url, {
@@ -19,7 +18,7 @@ function getBannerList(db) {
     const recommend = [...(data.data || [])];
     // 轮播信息
     insertMany(db, 'banner', bannerList).then(res => {
-      console.log('banner：数据插入成功！');
+      console.log('banner：数据插入成功！---------------------------');
     }).catch(err => {
       console.log(err);
     });
@@ -30,20 +29,21 @@ function getBannerList(db) {
         filename: item.filename
       };
     });
-    insertMany(db, 'uptodate', uptodate).then(res => {
-      console.log('uptodate：数据插入成功！');
+    insertMany(db, 'uptodate', db).then(res => {
+      console.log('uptodate：数据插入成功！-----------------------------');
     }).catch(err => {
       console.log(err);
     });
     // 歌曲
     recommend.forEach((item, index) => {
+      // 新歌
+      item.isNew = true;
       insertSong(db, item).then(res => {
-        console.log('歌曲导入成功');
+        console.log('banner：歌曲导入成功');
       }).catch(err => {
-        console.log('歌曲导入失败');
+        console.log('banner：歌曲导入失败');
       });
     });
-    insertSong(db, recommend[0]);
   }).catch(e => {
     console.log(e);
   });

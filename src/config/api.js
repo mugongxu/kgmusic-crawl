@@ -12,7 +12,7 @@ const api = {
   },
   // 歌单下音乐列表
   pList: {
-    url: 'http://m.kugou.com/plist/list/{specialid}',
+    url: 'http://m.kugou.com/plist/list/',
     method: 'GET'
   },
   // 音乐排行榜

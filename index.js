@@ -7,6 +7,10 @@ const mongodbConfig = require('./src/config/mongodb.js');
 const MongoClient = require('mongodb').MongoClient;
 // banner
 const getBannerList = require('./src/core/banner.js');
+// rank
+const getRankList = require('./src/core/rank.js');
+// sheet
+const getSheetList = require('./src/core/songSheet.js');
 
 MongoClient.connect(mongodbConfig.url, { useNewUrlParser: true }, (err, db) => {
   if (err) throw err;
@@ -15,4 +19,6 @@ MongoClient.connect(mongodbConfig.url, { useNewUrlParser: true }, (err, db) => {
   let dbKgmusic = db.db('kgmusic');
   // 数据获取
   getBannerList(dbKgmusic);
+  getRankList(dbKgmusic);
+  getSheetList(dbKgmusic);
 });

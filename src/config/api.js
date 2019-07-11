@@ -32,12 +32,12 @@ const api = {
   },
   // 歌手列表
   singerList: {
-    url: 'http://m.kugou.com/singer/list/{classid}',
+    url: 'http://m.kugou.com/singer/list/',
     method: 'GET'
   },
   // 歌手信息
   singerInfo: {
-    url: 'http://m.kugou.com/singer/info/{singerid}',
+    url: 'http://m.kugou.com/singer/info/',
     method: 'GET'
   },
   // 歌曲详情

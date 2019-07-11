@@ -7,6 +7,8 @@ const config = require('../config/api.js');
 const insert = require('../util/insert.js');
 const insertSong = require('./insertSong.js');
 
+const unique = require('../util/unique.js');
+
 const insertMany = insert.insertMany;
 const insertUnique = insert.insertUnique;
 
@@ -47,15 +49,21 @@ function recursionFunc(db) {
   } else {
     // 歌曲入库
     console.log('rank歌曲开始入库！-------------------------------');
-    songListTotal.forEach((item, index) => {
+    let rankIndex = songListTotal.map(item => {
+      return {
+        hash: item.hash,
+        rankid: rankid
+      };
+    });
+    // 排行榜索引
+    insertMany(db, 'rankIndex', rankIndex).then(res => {
+      console.log('rankIndex：数据插入成功！----------------------------');
+    }).catch(err => {
+      console.log('rankIndex插入失败：-------------------------', err);
+    });
+    // 去重
+    unique(songListTotal, 'rankid').forEach((item, index) => {
       insertSong(db, item).then(res => {
-        // insertUnique(db, 'rankIndex', {
-        //   hash: item.hash,
-        //   rankid: rankid
-        // }, {
-        //   hash: item.hash,
-        //   rankid: rankid
-        // });
         console.log('rank：歌曲导入成功');
       }).catch(err => {
         console.log('rank：歌曲导入失败');
@@ -75,7 +83,12 @@ function getRankInfo(db, rankid, page, total) {
   }).then(response => {
     const data = response.data || {};
     const songs = data.songs || {};
-    const songList = songs.list || [];
+    const songList = (songs.list || []).map(item => {
+      return {
+        ...item,
+        rankid
+      };
+    });
     // 歌曲
     console.log('rank歌曲获取中...');
     songListTotal = [...songListTotal, ...songList];

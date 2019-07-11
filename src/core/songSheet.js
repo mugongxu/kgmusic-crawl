@@ -7,6 +7,8 @@ const config = require('../config/api.js');
 const insert = require('../util/insert.js');
 const insertSong = require('./insertSong.js');
 
+const unique = require('../util/unique.js');
+
 const insertMany = insert.insertMany;
 const insertUnique = insert.insertUnique;
 
@@ -74,15 +76,20 @@ function recursionFunc(db) {
   } else {
     // 歌曲入库
     console.log('sheet歌曲开始入库！-------------------------------');
-    songListTotal.forEach((item, index) => {
+    let sheetIndex = songListTotal.map(item => {
+      return {
+        hash: item.hash,
+        rankid: rankid
+      };
+    });
+    // 排行榜索引
+    insertMany(db, 'sheetIndex', sheetIndex).then(res => {
+      console.log('sheetIndex：数据插入成功！----------------------------');
+    }).catch(err => {
+      console.log('sheetIndex插入失败：-------------------------', err);
+    });
+    unique(songListTotal, 'specialid').forEach((item, index) => {
       insertSong(db, item).then(res => {
-        // insertUnique(db, 'sheetIndex', {
-        //   hash: item.hash,
-        //   specialid: specialid
-        // }, {
-        //   hash: item.hash,
-        //   specialid: specialid
-        // });
         console.log('sheet：歌曲导入成功');
       }).catch(err => {
         console.log('sheet：歌曲导入失败');
@@ -102,7 +109,12 @@ function getSheetInfo(db, specialid, page, total) {
   }).then(response => {
     const data = response.data || {};
     const list = (data.list || {}).list || {};
-    const songList = list.info || [];
+    const songList = (list.info || []).map(item => {
+      return {
+        ...item,
+        specialid
+      };
+    });
     // 歌曲
     console.log('sheet歌曲获取中...');
     songListTotal = [...songListTotal, ...songList];

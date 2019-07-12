@@ -30,6 +30,38 @@ function insertSong(db, song) {
   });
 }
 
+function insertManySong(db, songList) {
+  let length = songList.length;
+  let index = 0;
+  console.log('开始添加歌曲---------------------------'+ length +'条');
+
+  return new Promise((resolve, reject) => {
+    let recursionFunc = function () {
+      let currSong = songList[index];
+      // 自增
+      index++
+      // 添加歌曲
+      console.log('歌曲添加中...' + index);
+      insertSong(db, currSong).then(res => {
+        console.log('歌曲添加成功-_-');
+        if (index < length) {
+          recursionFunc();
+        } else {
+          resolve();
+        }
+      }).catch(err => {
+        console.log('歌曲添加失败?_?');
+        if (index < length) {
+          recursionFunc();
+        } else {
+          resolve();
+        }
+      })
+    }
+    recursionFunc();
+  });
+}
+
 // 获取歌曲详情
 function getSongInfo(song) {
   // 信息
@@ -76,4 +108,5 @@ function getSongInfo(song) {
   });
 }
 
-module.exports = insertSong;
+exports.insertSong = insertSong;
+exports.insertManySong = insertManySong;

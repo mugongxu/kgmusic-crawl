@@ -5,7 +5,9 @@
 const axios = require('../util/ajax.js');
 const config = require('../config/api.js');
 const insert = require('../util/insert.js');
-const insertSong = require('./insertSong.js');
+const insertManySong = require('./insertSong.js').insertManySong;
+
+const connectDB = require('../util/connectDB.js');
 
 const unique = require('../util/unique.js');
 
@@ -16,18 +18,23 @@ const PAGESIZE = 30;
 
 let classListTotal = [];
 
-function getSingeClass(db) {
+function getSingeClass() {
   axios.get(config.singer.url, {
     params: {}
   }).then(response => {
     const data = response.data || {};
     classListTotal = data.list || [];
-    insertMany(db, 'singerClass', classListTotal).then(res => {
-      console.log('singerClass：数据插入成功！---------------------------------');
-      // 歌手分类所属歌手
-      recursionFunc(db);
-    }).catch(err => {
-      console.log('singerClass：数据插入失败！-------------------------------');
+    // 连接数据库
+    connectDB((db, source) => {
+      insertMany(db, 'singerClass', classListTotal).then(res => {
+        console.log('singerClass：数据插入成功！---------------------------------');
+        source.close();
+        // 歌手分类所属歌手
+        recursionFunc();
+      }).catch(err => {
+        console.log('singerClass：数据插入失败！-------------------------------');
+        source.close();
+      });
     });
   }).catch(e => {
     console.log('singerClass获取失败');
@@ -37,27 +44,49 @@ function getSingeClass(db) {
 let singerListTotal = [];
 let recursionIndex = -1;
 
-function recursionFunc(db) {
+function recursionFunc() {
   let length = classListTotal.length;
   recursionIndex++;
   // 获取全部歌手
   if (recursionIndex < length) {
     const currClass = classListTotal[recursionIndex];
-    getSingerListByClass(db, currClass.classid, 1, 0)
+    getSingerListByClass(currClass.classid, 1, 0)
   } else {
     // 歌手入库
     console.log('singer开始入库！-------------------------------');
-    insertMany(db, 'singer', singerListTotal).then(res => {
-      console.log('singer：数据插入成功！---------------------------------');
-      // 歌手分类所属歌手
-      uniqueSinger(db);
-    }).catch(err => {
-      console.log('singer：数据插入失败！-------------------------------');
+    let singerIndex = singerListTotal.map(item => {
+      return {
+        classid: item.classid,
+        singerid: item.singerid
+      };
+    });
+    // 连接数据库
+    connectDB((db, source) => {
+      // 歌手类别索引
+      insertMany(db, 'singerIndex', singerIndex).then(res => {
+        console.log('singerIndex：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('singerIndex插入失败：-------------------------', err);
+        source.close();
+      });
+    });
+    // 连接数据库
+    connectDB((db, source) => {
+      insertMany(db, 'singer', singerListTotal).then(res => {
+        console.log('singer：数据插入成功！---------------------------------');
+        source.close();
+        // 歌手分类所属歌手
+        uniqueSinger();
+      }).catch(err => {
+        console.log('singer：数据插入失败！-------------------------------');
+        source.close();
+      });
     });
   }
 }
 
-function getSingerListByClass(db, classid, page, total) {
+function getSingerListByClass(classid, page, total) {
   axios.get(config.singerList.url + classid, {
     params: {
       classid: classid,
@@ -82,17 +111,17 @@ function getSingerListByClass(db, classid, page, total) {
     total = list.total;
     if (pagesize * page < total) {
       // 下一页获取
-      getSingerListByClass(db, classid, page + 1, total)
+      getSingerListByClass(classid, page + 1, total)
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   }).catch(e => {
     console.log('singer获取失败', e);
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getSingerListByClass(db, classid, page + 1, total)
+      getSingerListByClass(classid, page + 1, total)
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   });
 }
@@ -100,38 +129,41 @@ function getSingerListByClass(db, classid, page, total) {
 // 歌手去重
 let uniqueSingerListTotal = [];
 
-function uniqueSinger(db) {
+function uniqueSinger() {
 
-  uniqueSingerListTotal = unique(singerListTotal, 'singeeid');
+  uniqueSingerListTotal = unique(singerListTotal, 'singerid');
 
   // 根据歌手获取歌曲
-  recursionSingerFunc(db);
+  recursionSingerFunc();
 }
 
 let recursionSingerIndex = -1;
 let songListTotal = [];
 
-function recursionSingerFunc(db) {
+function recursionSingerFunc() {
   let length = uniqueSingerListTotal.length;
   recursionSingerIndex++;
   // 获取全部歌手
   if (recursionSingerIndex < length) {
     const currSinger = uniqueSingerListTotal[recursionSingerIndex];
-    getSongsBySinger(db, currSinger.singerid, 1, 0)
+    getSongsBySinger(currSinger.singerid, 1, 0)
   } else {
-    // 歌曲入库
-    console.log('singer歌曲开始入库！-------------------------------');
-    songListTotal.forEach((item, index) => {
-      insertSong(db, item).then(res => {
+    // 连接数据库
+    connectDB((db, source) => {
+      // 歌曲入库
+      console.log('singer歌曲开始入库！-------------------------------');
+      insertManySong(db, songListTotal).then(res => {
         console.log('singer：歌曲导入成功');
+        source.close();
       }).catch(err => {
         console.log('singer：歌曲导入失败');
+        source.close();
       });
     });
   }
 }
 
-function getSongsBySinger(db, singerid, page, total) {
+function getSongsBySinger(singerid, page, total) {
   axios.get(config.singerInfo.url + singerid, {
     params: {
       singerid: singerid,
@@ -149,17 +181,17 @@ function getSongsBySinger(db, singerid, page, total) {
     total = songs.total;
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getSongsBySinger(db, rankid, page + 1, total)
+      getSongsBySinger(singerid, page + 1, total)
     } else {
-      recursionSingerFunc(db);
+      recursionSingerFunc();
     }
   }).catch(e => {
     console.log('singer歌曲获取失败：', e);
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getSongsBySinger(db, rankid, page + 1, total)
+      getSongsBySinger(singerid, page + 1, total)
     } else {
-      recursionSingerFunc(db);
+      recursionSingerFunc();
     }
   });
 }

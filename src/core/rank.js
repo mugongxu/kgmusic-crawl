@@ -5,9 +5,9 @@
 const axios = require('../util/ajax.js');
 const config = require('../config/api.js');
 const insert = require('../util/insert.js');
-const insertSong = require('./insertSong.js');
+const insertManySong = require('./insertSong.js').insertManySong;
 
-const unique = require('../util/unique.js');
+const connectDB = require('../util/connectDB.js');
 
 const insertMany = insert.insertMany;
 const insertUnique = insert.insertUnique;
@@ -16,20 +16,25 @@ const PAGESIZE = 30;
 
 let rankListTotal = [];
 
-function getRankList(db) {
+function getRankList() {
   axios.get(config.rank.url, {
     params: {}
   }).then(response => {
     const data = response.data || {};
     const rank = data.rank || {};
     rankListTotal = [...(rank.list || [])];
-    // 排行榜信息
-    insertMany(db, 'rank', rankListTotal).then(res => {
-      console.log('rank：数据插入成功！----------------------------');
-      // 排行榜所属歌曲
-      recursionFunc(db);
-    }).catch(err => {
-      console.log('rank插入失败：-------------------------', err);
+    // 连接数据库
+    connectDB((db, source) => {
+      // 排行榜信息
+      insertMany(db, 'rank', rankListTotal).then(res => {
+        console.log('rank：数据插入成功！----------------------------');
+        source.close();
+        // 排行榜所属歌曲
+        recursionFunc();
+      }).catch(err => {
+        console.log('rank插入失败：-------------------------', err);
+        source.close();
+      });
     });
   }).catch(e => {
     console.log('rank获取失败：', e);
@@ -45,34 +50,42 @@ function recursionFunc(db) {
   // 获取全部歌曲
   if (recursionIndex < length) {
     const currRank = rankListTotal[recursionIndex];
-    getRankInfo(db, currRank.rankid, 1, 0)
+    getRankInfo(currRank.rankid, 1, 0)
   } else {
     // 歌曲入库
     console.log('rank歌曲开始入库！-------------------------------');
     let rankIndex = songListTotal.map(item => {
       return {
         hash: item.hash,
-        rankid: rankid
+        rankid: item.rankid
       };
     });
-    // 排行榜索引
-    insertMany(db, 'rankIndex', rankIndex).then(res => {
-      console.log('rankIndex：数据插入成功！----------------------------');
-    }).catch(err => {
-      console.log('rankIndex插入失败：-------------------------', err);
+    // 连接数据库
+    connectDB((db, source) => {
+      // 排行榜索引
+      insertMany(db, 'rankIndex', rankIndex).then(res => {
+        console.log('rankIndex：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('rankIndex插入失败：-------------------------', err);
+        source.close();
+      });
     });
-    // 去重
-    unique(songListTotal, 'rankid').forEach((item, index) => {
-      insertSong(db, item).then(res => {
+    // 连接数据库
+    connectDB((db, source) => {
+      // 去重
+      insertManySong(db, songListTotal).then(res => {
         console.log('rank：歌曲导入成功');
+        source.close();
       }).catch(err => {
         console.log('rank：歌曲导入失败');
+        source.close();
       });
     });
   }
 }
 
-function getRankInfo(db, rankid, page, total) {
+function getRankInfo(rankid, page, total) {
   axios.get(config.rankInfo.url, {
     params: {
       rankid: rankid,
@@ -95,17 +108,17 @@ function getRankInfo(db, rankid, page, total) {
     total = songs.total;
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getRankInfo(db, rankid, page + 1, total)
+      getRankInfo(rankid, page + 1, total)
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   }).catch(e => {
     console.log('rank歌曲获取失败：', e);
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getRankInfo(db, rankid, page + 1, total)
+      getRankInfo(rankid, page + 1, total)
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   });
 }

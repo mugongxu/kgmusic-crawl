@@ -5,9 +5,9 @@
 const axios = require('../util/ajax.js');
 const config = require('../config/api.js');
 const insert = require('../util/insert.js');
-const insertSong = require('./insertSong.js');
+const insertManySong = require('./insertSong.js').insertManySong;
 
-const unique = require('../util/unique.js');
+const connectDB = require('../util/connectDB.js');
 
 const insertMany = insert.insertMany;
 const insertUnique = insert.insertUnique;
@@ -18,7 +18,7 @@ let plistListTotal = [];
 
 let totalSize = 0;
 
-function getSheetList(db, page) {
+function getSheetList(page) {
   page = page || 1;
   axios.get(config.pIndex.url, {
     params: {
@@ -35,70 +35,83 @@ function getSheetList(db, page) {
     console.log('sheet数据获取中...')
     if (PAGESIZE * page < totalSize) {
       // 下一页获取
-      getSheetList(db, page + 1)
+      getSheetList(page + 1)
     } else {
       // 排行榜信息
-      insertManySong(db);
+      insertSongList();
     }
   }).catch(e => {
     console.log('sheet数据获取失败');
     if (PAGESIZE * page < totalSize) {
       // 下一页获取
-      getSheetList(db, page + 1)
+      getSheetList(page + 1)
     } else {
       // 排行榜信息
-      insertManySong(db);
+      insertSongList();
     }
   });
 };
 
-function insertManySong(db) {
-  // 排行榜信息
-  insertMany(db, 'sheet', plistListTotal).then(res => {
-    console.log('sheet：数据插入成功！---------------------------------');
-    // 排行榜所属歌曲
-    recursionFunc(db);
-  }).catch(err => {
-    console.log('sheet：数据插入失败！-------------------------------');
+function insertSongList() {
+  // 连接数据库
+  connectDB((db, source) => {
+    // 排行榜信息
+    insertMany(db, 'sheet', plistListTotal).then(res => {
+      console.log('sheet：数据插入成功！---------------------------------');
+      source.close();
+      // 排行榜所属歌曲
+      recursionFunc();
+    }).catch(err => {
+      console.log('sheet：数据插入失败！-------------------------------');
+      source.close();
+    });
   });
 }
 
 let songListTotal = [];
 let recursionIndex = -1;
 
-function recursionFunc(db) {
+function recursionFunc() {
   let length = plistListTotal.length;
   recursionIndex++;
   // 获取全部歌曲
   if (recursionIndex < length) {
     const currRank = plistListTotal[recursionIndex];
-    getSheetInfo(db, currRank.specialid, 1, 0)
+    getSheetInfo(currRank.specialid, 1, 0)
   } else {
     // 歌曲入库
     console.log('sheet歌曲开始入库！-------------------------------');
     let sheetIndex = songListTotal.map(item => {
       return {
         hash: item.hash,
-        rankid: rankid
+        specialid: item.specialid
       };
     });
-    // 排行榜索引
-    insertMany(db, 'sheetIndex', sheetIndex).then(res => {
-      console.log('sheetIndex：数据插入成功！----------------------------');
-    }).catch(err => {
-      console.log('sheetIndex插入失败：-------------------------', err);
+    // 连接数据库
+    connectDB((db, source) => {
+      // 排行榜索引
+      insertMany(db, 'sheetIndex', sheetIndex).then(res => {
+        console.log('sheetIndex：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('sheetIndex插入失败：-------------------------', err);
+        source.close();
+      });
     });
-    unique(songListTotal, 'specialid').forEach((item, index) => {
-      insertSong(db, item).then(res => {
+    // 连接数据库
+    connectDB((db, source) => {
+      insertManySong(db, songListTotal).then(res => {
         console.log('sheet：歌曲导入成功');
+        source.close();
       }).catch(err => {
         console.log('sheet：歌曲导入失败');
+        source.close();
       });
     });
   }
 }
 
-function getSheetInfo(db, specialid, page, total) {
+function getSheetInfo(specialid, page, total) {
   axios.get(config.pList.url + specialid, {
     params: {
       specialid: specialid,
@@ -121,17 +134,17 @@ function getSheetInfo(db, specialid, page, total) {
     total = list.total;
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getSheetInfo(db, specialid, page + 1, total)
+      getSheetInfo(specialid, page + 1, total)
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   }).catch(e => {
     console.log('sheet歌曲获取失败:', e);
     if (PAGESIZE * page < total) {
       // 下一页获取
-      getSheetInfo(db, specialid, page + 1, total);
+      getSheetInfo(specialid, page + 1, total);
     } else {
-      recursionFunc(db);
+      recursionFunc();
     }
   });
 }

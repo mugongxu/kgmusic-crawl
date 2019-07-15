@@ -37,7 +37,7 @@ function getSheetList(page) {
       // 下一页获取
       getSheetList(page + 1)
     } else {
-      // 排行榜信息
+      // 歌单歌曲
       insertSongList();
     }
   }).catch(e => {
@@ -46,7 +46,7 @@ function getSheetList(page) {
       // 下一页获取
       getSheetList(page + 1)
     } else {
-      // 排行榜信息
+      // 歌单歌曲
       insertSongList();
     }
   });
@@ -86,6 +86,16 @@ function recursionFunc() {
         hash: item.hash,
         specialid: item.specialid
       };
+    });
+    // 连接数据库
+    connectDB((db, source) => {
+      insertMany(db, 'tempSongs', songListTotal).then(res => {
+        console.log('tempSongs：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('tempSongs插入失败：-------------------------', err);
+        source.close();
+      });
     });
     // 连接数据库
     connectDB((db, source) => {

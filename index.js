@@ -16,8 +16,8 @@ const getHotSearchList = require('./src/core/hotSearch.js');
 console.log('-----------------------------------------------');
 
 // 数据获取
-getBannerList();
+// getBannerList();
 getRankList();
-getSheetList();
-getSingeClass();
-getHotSearchList();
+// getSheetList();
+// getSingeClass();
+// getHotSearchList();

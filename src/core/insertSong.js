@@ -101,7 +101,7 @@ function getSongInfo(song) {
   return Promise.all([getDetail, getLyrics]).then(res => {
     let newInfo = { ...(res[0] || {}), lyrics: res[1] };
     // 合并信息
-    let target = Object.assign({}, data, newInfo);
+    let target = Object.assign({}, song, newInfo);
     return Promise.resolve(target);
   }).catch(err => {
     return Promise.reject(err)

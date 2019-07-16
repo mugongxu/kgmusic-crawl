@@ -2,7 +2,7 @@
 const axios = require('axios');
 
 const ajax = axios.create({
-    timeout: 20000
+    timeout: 60000
 });
 
 ajax.interceptors.request.use((config) => {

@@ -73,11 +73,11 @@ function recursionFunc() {
     });
     // 连接数据库
     connectDB((db, source) => {
-      insertMany(db, 'singer', singerListTotal).then(res => {
+      insertMany(db, 'singer', unique(singerListTotal, 'singerid')).then(res => {
         console.log('singer：数据插入成功！---------------------------------');
         source.close();
         // 歌手分类所属歌手
-        uniqueSinger();
+        // uniqueSinger();
       }).catch(err => {
         console.log('singer：数据插入失败！-------------------------------');
         source.close();
@@ -107,7 +107,7 @@ function getSingerListByClass(classid, page, total) {
     // 页数信息
     console.log('singer信息获取中...');
     singerListTotal = [...singerListTotal, ...singeList];
-    const pagesize = list.pagesize;
+    const pagesize = singers.pagesize;
     total = list.total;
     if (pagesize * page < total) {
       // 下一页获取

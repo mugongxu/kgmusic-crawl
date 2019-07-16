@@ -90,6 +90,17 @@ function recursionFunc() {
     // 连接数据库
     connectDB((db, source) => {
       // 排行榜索引
+      insertMany(db, 'tempSongs', songListTotal).then(res => {
+        console.log('tempSongs：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('tempSongs插入失败：-------------------------', err);
+        source.close();
+      });
+    });
+    // 连接数据库
+    connectDB((db, source) => {
+      // 排行榜索引
       insertMany(db, 'sheetIndex', sheetIndex).then(res => {
         console.log('sheetIndex：数据插入成功！----------------------------');
         source.close();

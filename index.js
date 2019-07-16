@@ -17,7 +17,7 @@ console.log('-----------------------------------------------');
 
 // 数据获取
 // getBannerList();
-getRankList();
-// getSheetList();
+// getRankList();
+getSheetList();
 // getSingeClass();
 // getHotSearchList();

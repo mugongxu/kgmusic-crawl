@@ -57,7 +57,8 @@ function recursionFunc() {
     let singerIndex = singerListTotal.map(item => {
       return {
         classid: item.classid,
-        singerid: item.singerid
+        singerid: item.singerid,
+        singername: item.singername
       };
     });
     // 连接数据库

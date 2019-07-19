@@ -57,7 +57,8 @@ function recursionFunc(db) {
     let rankIndex = songListTotal.map(item => {
       return {
         hash: item.hash,
-        rankid: item.rankid
+        rankid: item.rankid,
+        filename: item.filename
       };
     });
     // 连接数据库

@@ -24,7 +24,7 @@ function insertSong(db, song) {
           reject(err);
         });
       } else {
-        resolve();
+        resolve('pass');
       }
     });
   });
@@ -45,14 +45,22 @@ function insertManySong(db, songList) {
       insertSong(db, currSong).then(res => {
         console.log('歌曲添加成功-_-');
         if (index < length) {
-          recursionFunc();
+          if (res === 'pass') {
+            recursionFunc();
+          } else {
+            setTimeout(() => {
+              recursionFunc();
+            }, 0);
+          }
         } else {
           resolve();
         }
       }).catch(err => {
         console.log('歌曲添加失败?_?');
         if (index < length) {
-          recursionFunc();
+          setTimeout(() => {
+            recursionFunc();
+          }, 0);
         } else {
           resolve();
         }
@@ -69,11 +77,24 @@ function getSongInfo(song) {
     axios.get(config.songInfo.url, {
       params: {
         cmd: 'playInfo',
-        hash: song.hash
+        hash: song.hash,
+        from: 'mkugou',
+        apiver: 2,
+        mid: '151810f9aeec7de177a1396f627bf434',
+        userid: 0,
+        platid: 5,
+        dfid: '1L6aZN0iGr791T3mLL0LA9Ln'
       }
     }).then(res => {
       const data = res.data || {};
-      resolve(data);
+      if (data.errcode) {
+        console.log('信息失败$$$$$$$$$$$$$$$$$$$$$$$$$$$');
+        setTimeout(() => {
+          reject(data.errcode);
+        }, 60000);
+      } else {
+        resolve(data);
+      }
     }).catch(err => {
       console.log('信息失败');
       reject(err);

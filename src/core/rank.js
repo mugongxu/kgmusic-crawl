@@ -22,7 +22,11 @@ function getRankList() {
   }).then(response => {
     const data = response.data || {};
     const rank = data.rank || {};
-    rankListTotal = [...(rank.list || [])];
+    let date = new Date();
+    rankListTotal = (rank.list || []).map(item => {
+      item.timestamp = Math.floor(date.getTime() / 1000);
+      return item;
+    });
     // 连接数据库
     connectDB((db, source) => {
       // 排行榜信息

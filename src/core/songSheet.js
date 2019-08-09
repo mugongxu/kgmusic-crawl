@@ -89,15 +89,15 @@ function recursionFunc() {
       };
     });
     // 连接数据库
-    // connectDB((db, source) => {
-    //   insertMany(db, 'tempSongs', songListTotal).then(res => {
-    //     console.log('tempSongs：数据插入成功！----------------------------');
-    //     source.close();
-    //   }).catch(err => {
-    //     console.log('tempSongs插入失败：-------------------------', err);
-    //     source.close();
-    //   });
-    // });
+    connectDB((db, source) => {
+      insertMany(db, 'tempSongs', songListTotal).then(res => {
+        console.log('tempSongs：数据插入成功！----------------------------');
+        source.close();
+      }).catch(err => {
+        console.log('tempSongs插入失败：-------------------------', err);
+        source.close();
+      });
+    });
     // 连接数据库
     connectDB((db, source) => {
       // 排行榜索引
@@ -110,15 +110,15 @@ function recursionFunc() {
       });
     });
     // 连接数据库
-    // connectDB((db, source) => {
-    //   insertManySong(db, songListTotal).then(res => {
-    //     console.log('sheet：歌曲导入成功');
-    //     source.close();
-    //   }).catch(err => {
-    //     console.log('sheet：歌曲导入失败');
-    //     source.close();
-    //   });
-    // });
+    connectDB((db, source) => {
+      insertManySong(db, songListTotal).then(res => {
+        console.log('sheet：歌曲导入成功');
+        source.close();
+      }).catch(err => {
+        console.log('sheet：歌曲导入失败');
+        source.close();
+      });
+    });
   }
 }
 

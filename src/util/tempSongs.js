@@ -8,7 +8,7 @@ const connectDB = require('./connectDB.js');
 
 // 连接数据库
 connectDB((db, source) => {
-  db.collection('tempSongs').find().skip(177545).toArray((err, result) => {
+  db.collection('tempSongs').find().limit(10000).skip(130000).toArray((err, result) => {
     if (err) throw err;
     result = result || [];
     // 添加歌曲
@@ -21,4 +21,3 @@ connectDB((db, source) => {
     });
   });
 });
-
